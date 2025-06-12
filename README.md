@@ -6,10 +6,10 @@ Whether you're loading process data, filtering noisy signals, plotting trends, o
 
 The purpose of this repository is three-fold:
  - To help the author expand his understanding of Python, VS Code, and Github, building upon a foundation of MATLAB used in an academic research setting
- - To underatand how to effectively leverage natural lanaguge AI models to generate and optimize basic coding blocks (and learn how to teach other engineers how to leverge AI in the same way)
+ - To underatand how to effectively leverage natural language AI models to generate and optimize basic coding blocks (and learn how to teach other engineers how to leverge AI in the same way)
  - To generate a simple coding reference to enhance the analytical toolbox available to engineers and technical specialists who might not have a traditional coding background.
  
-Code templates were generated using ChatGPT. Testing and Validation is done by Josh Villanueva.
+Code templates were generated using ChatGPT. Testing and Validation was done by Josh Villanueva.
 
 ## What's Inside
 
