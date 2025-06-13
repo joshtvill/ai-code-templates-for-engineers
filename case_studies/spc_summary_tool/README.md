@@ -24,7 +24,7 @@ Designed to reflect real-world manufacturing scenarios such as:
    pip install -r requirements.txt
 
 2. Update the file_path and value_column in spc_runner.py:
-   - **If using Windows**, use a raw string format for the file path:
+   - **If using Windows**, use a raw string format for the file path: 
    file_path = r'C:\Users\yourname\yourdata.csv'
    value_column = 'Thickness_nm'
 
