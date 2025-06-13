@@ -1,3 +1,16 @@
+'''
+spc_runner.py
+
+Main script for generating summary statistics and a control chart from CSV or Excel process data.
+
+This lightweight SPC tool is intended for early process monitoring, drift detection,
+and outlier identification in manufacturing, lab development, or system integration settings.
+
+Expected input: CSV or Excel file with a single numeric metric column (e.g., thickness, yield, viability)
+
+Author: Josh Villanueva
+'''
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
