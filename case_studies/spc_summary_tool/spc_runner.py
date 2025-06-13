@@ -149,23 +149,25 @@ def main():
 
     Edit file_path and value_column as needed.
     '''
-    file_path = 'example_data.csv'     # Update with your actual file path
-    value_column = 'Thickness_nm'      # Update with your actual column name
+    # Update with your actual file path. If using Windows filepath, use raw string (r'path\to\file.csv')
+    # Example: file_path = r'C:\path\to\your\data.csv'
+    file_path = 'example_data.csv'
+    value_column = 'Thickness_nm'
 
-    # Step 1: Load the data
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Define output paths relative to the script directory
+    chart_path = os.path.join(script_dir, 'output_chart.png')
+    csv_path = os.path.join(script_dir, 'flagged_data.csv')
+
+    # Run SPC pipeline
     data = load_data(file_path, value_column)
-
-    # Step 2: Compute SPC metrics
     stats = compute_spc_metrics(data)
-
-    # Step 3: Detect outliers
     outliers = detect_outliers(data, method='zscore', threshold=3.0)
 
-    # Step 4: Plot control chart
-    plot_control_chart(data, stats, outliers, output_path='output_chart.png')
-
-    # Step 5: Save data with flags
-    save_flagged_data(data, outliers, output_path='flagged_data.csv')
+    plot_control_chart(data, stats, outliers, output_path=chart_path)
+    save_flagged_data(data, outliers, output_path=csv_path)
 
     # Print results to console
     print("Summary Statistics:")
@@ -173,6 +175,6 @@ def main():
         print(f"  {k}: {v:.2f}")
     print(f"Total Outliers Detected: {outliers.sum()}")
 
-# Entry point guard – ensures main() only runs when script is executed directly
+# Only run main() when executed directly, not imported
 if __name__ == '__main__':
     main()
