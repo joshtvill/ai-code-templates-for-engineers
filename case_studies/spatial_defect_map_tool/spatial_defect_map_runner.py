@@ -1,7 +1,7 @@
 '''
-defect_heatmap_runner.py
+spatial_defect_map_runner.py
 
-Main script for generating a 2D defect heatmap from CSV data.
+Main script for generating a 2D spatial defect map from CSV data.
 
 This lightweight visualization tool is intended for early debug and defect pattern
 triage in wafer processing, tool ramp, or equipment development environments.
@@ -38,12 +38,12 @@ def load_defect_data(file_path):
     return df
 
 # ============================================
-# Function: Plot and save defect heatmap
+# Function: Plot and save spatial defect map
 # ============================================
 
 def plot_defect_map(df, output_path):
     '''
-    Generate a 2D scatter plot of defect positions color-coded by type.
+    Generate a 2D spatial defect map (scatter plot) color-coded by type.
 
     Args:
         df (pd.DataFrame): DataFrame with x, y, type, severity columns.
@@ -73,13 +73,31 @@ def plot_defect_map(df, output_path):
 # ============================================
 # Main Runner
 # ============================================
+def main():
+    '''
+    Main execution block: load data, generate plot, and save output image.
 
+    Edit input_csv and output_png as needed.
+    '''
+    # Update with your actual file path. If using Windows filepath, use raw string (r'path\to\file.csv')
+    # Example: input_csv = r'C:\path\to\your\defect_data.csv'
+    input_csv = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\spatial_defect_map_tool\example_defects.csv'
+    output_png = 'spatial_defect_map.png'
+
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Define input/output paths relative to the script directory
+    csv_path = os.path.join(script_dir, input_csv)
+    plot_path = os.path.join(script_dir, output_png)
+
+    # Run defect mapping pipeline
+    df = load_defect_data(csv_path)
+    plot_defect_map(df, plot_path)
+
+    # Print status to console
+    print(f'Spatial defect map saved to: {plot_path}')
+
+# Only run main() when executed directly, not imported
 if __name__ == '__main__':
-    base_dir = os.path.dirname(__file__)
-    input_csv = os.path.join(base_dir, 'example_defects.csv')
-    output_png = os.path.join(base_dir, 'defect_heatmap.png')
-
-    df = load_defect_data(input_csv)
-    plot_defect_map(df, output_png)
-
-    print(f'Defect heatmap saved to: {output_png}')
+    main()
