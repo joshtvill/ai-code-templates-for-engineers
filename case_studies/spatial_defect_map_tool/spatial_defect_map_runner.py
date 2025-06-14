@@ -81,7 +81,7 @@ def main():
     '''
     # Update with your actual file path. If using Windows filepath, use raw string (r'path\to\file.csv')
     # Example: input_csv = r'C:\path\to\your\defect_data.csv'
-    input_csv = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\spatial_defect_map_tool\example_defects.csv'
+    input_csv = 'example_defects.csv'
     output_png = 'spatial_defect_map.png'
 
     # Get the directory where this script is located
