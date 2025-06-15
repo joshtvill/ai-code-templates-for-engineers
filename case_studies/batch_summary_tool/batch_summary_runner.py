@@ -159,6 +159,7 @@ def plot_risk_trend(log_path, plot_path):
         plt.xlabel('Date')
         plt.ylabel('Risk Score (0–1)')
         plt.grid(True, linestyle='--', alpha=0.3)
+        plt.xticks(rotation=90)
         plt.tight_layout()
         plt.savefig(plot_path, dpi=300)
         plt.close()
@@ -176,7 +177,7 @@ def main():
     Edit input_dir as needed to reflect your file structure.
     '''
     # Update with your actual folder path. Use raw string if using Windows (e.g., r'C:\path\to\files')
-    input_dir = '.'
+    input_dir = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\batch_summary_tool'
 
     # Define input/output file paths
     batch_path = os.path.join(input_dir, 'example_batch_log.csv')
