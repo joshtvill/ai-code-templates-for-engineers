@@ -142,6 +142,8 @@ def save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, o
 # Loads historical data, trains both models, and saves outputs
 # ============================================
 def main():
+
+     # Update with your actual folder path. Use raw string if using Windows (e.g., r'C:\path\to\files')
     base_dir = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\batch_summary_tool'
     hist_dir = os.path.join(base_dir, 'historical_data')
     out_dir = os.path.join(base_dir, 'output')
