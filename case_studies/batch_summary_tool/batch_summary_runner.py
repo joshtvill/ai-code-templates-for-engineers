@@ -13,6 +13,7 @@ Author: Josh Villanueva
 
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # ============================================
 # Function: Load generic CSV data
@@ -67,21 +68,25 @@ def merge_batch_data(batch_df, qc_df, coa_df):
         return pd.DataFrame()
 
 # ============================================
-# Function: Apply rule-based risk flag
+# Function: Apply rule-based risk scoring
 # ============================================
 def apply_risk_rules(df):
     '''
-    Add binary flags for high-risk batches using simple rule logic.
+    Add binary flags and normalized risk score for each batch.
 
-    Current rule:
-        component_A > 0.70 AND avg_pH < 6.9
+    Rule logic:
+        Risk is higher when component_A is high AND avg_pH is low.
 
     Adds:
-        "risk_flag" column (True/False)
-        "risk_score" column (0 or 1)
+        - "risk_flag": True/False for high-risk rule
+        - "risk_score": Float between 0 and 1
     '''
     df['risk_flag'] = (df['component_A'] > 0.70) & (df['avg_pH'] < 6.9)
-    df['risk_score'] = df['risk_flag'].astype(int)
+
+    # Score linearly increases if component_A > 0.70 or avg_pH < 6.9
+    score = 0.5 * (df['component_A'] - 0.70) / 0.1 + 0.5 * (6.9 - df['avg_pH']) / 0.2
+    df['risk_score'] = score.clip(lower=0, upper=1)
+
     return df
 
 # ============================================
@@ -89,20 +94,18 @@ def apply_risk_rules(df):
 # ============================================
 def export_summary_report(df, output_path):
     '''
-    Generate and save a Markdown report summarizing batch-level outcomes.
+    Save a Markdown summary of batch risk outcomes.
 
     Args:
-        df (pd.DataFrame): DataFrame with batch-level metrics and risk flags.
-        output_path (str): File path to save the .md report.
-
-    MATLAB analogy:
-        >> writetable(T, 'summary.md');
+        df (pd.DataFrame): DataFrame with batch-level metrics.
+        output_path (str): File path to save summary.
     '''
     try:
         with open(output_path, 'w') as f:
             f.write("# Batch Summary Report\n\n")
             for _, row in df.iterrows():
                 f.write(f"## Batch {row['batch_id']}\n")
+                f.write(f"- Date: {row['date']}\n")
                 f.write(f"- Component A: {row['component_A']}\n")
                 f.write(f"- Avg pH: {row['avg_pH']}\n")
                 f.write(f"- Viability: {row['viability_pct']}%\n")
@@ -112,17 +115,17 @@ def export_summary_report(df, output_path):
         print(f"Markdown export failed: {e}")
 
 # ============================================
-# Function: Append batch results to history log
+# Function: Append batch scores to master log
 # ============================================
 def append_to_master_log(df, log_path):
     '''
-    Append batch-level risk scores to a cumulative history log.
+    Add scored batch-level rows to a running CSV log.
 
     Args:
-        df (pd.DataFrame): Scored batch-level data.
-        log_path (str): File path to master history CSV.
+        df (pd.DataFrame): Processed batch-level data.
+        log_path (str): File path to cumulative log file.
     '''
-    cols_to_save = ['batch_id', 'component_A', 'avg_pH', 'viability_pct', 'risk_flag', 'risk_score']
+    cols_to_save = ['batch_id', 'date', 'component_A', 'avg_pH', 'viability_pct', 'risk_flag', 'risk_score']
     new_data = df[cols_to_save]
     try:
         if os.path.exists(log_path):
@@ -136,21 +139,52 @@ def append_to_master_log(df, log_path):
         print(f"Error writing master log: {e}")
 
 # ============================================
+# Function: Plot time trend of risk scores
+# ============================================
+def plot_risk_trend(log_path, plot_path):
+    '''
+    Plot time-series of batch risk scores from master log.
+
+    Args:
+        log_path (str): File path to cumulative log file.
+        plot_path (str): Output image path for risk trend plot.
+    '''
+    try:
+        df = pd.read_csv(log_path, parse_dates=['date'])
+        df.sort_values('date', inplace=True)
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(df['date'], df['risk_score'], marker='o', linestyle='-', label='Risk Score')
+        plt.title('Batch Risk Score Over Time')
+        plt.xlabel('Date')
+        plt.ylabel('Risk Score (0–1)')
+        plt.grid(True, linestyle='--', alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(plot_path, dpi=300)
+        plt.close()
+        print("Risk trend plot saved.")
+    except Exception as e:
+        print(f"Failed to generate trend plot: {e}")
+
+# ============================================
 # Main Runner
 # ============================================
 def main():
     '''
     Main execution block: load files, merge data, score batches, export outputs.
 
-    Edit input_csv and output_md as needed.
+    Edit input_dir as needed to reflect your file structure.
     '''
-    # Update with your actual file paths. If using Windows paths, use raw string (r'path\to\file.csv')
-    # Example: batch_path = r'C:\path\to\example_batch_log.csv'
-    batch_path = 'example_batch_log.csv'
-    qc_path = 'example_qc_data.csv'
-    coa_path = 'example_coa.csv'
-    output_md = 'batch_summary_output.md'
-    history_log = 'batch_history_log.csv'
+    # Update with your actual folder path. Use raw string if using Windows (e.g., r'C:\path\to\files')
+    input_dir = '.'
+
+    # Define input/output file paths
+    batch_path = os.path.join(input_dir, 'example_batch_log.csv')
+    qc_path = os.path.join(input_dir, 'example_qc_data.csv')
+    coa_path = os.path.join(input_dir, 'example_coa.csv')
+    output_md = os.path.join(input_dir, 'batch_summary_output.md')
+    history_log = os.path.join(input_dir, 'batch_history_log.csv')
+    risk_plot = os.path.join(input_dir, 'risk_trend_plot.png')
 
     # Run batch scoring pipeline
     batch_df = load_csv_file(batch_path, 'Batch Log')
@@ -162,6 +196,7 @@ def main():
         scored_df = apply_risk_rules(merged_df)
         export_summary_report(scored_df, output_md)
         append_to_master_log(scored_df, history_log)
+        plot_risk_trend(history_log, risk_plot)
         print("Process complete.")
     else:
         print("No data to process.")
