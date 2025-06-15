@@ -73,15 +73,29 @@ def train_gmm(df, features, viability_col='viability_pct'):
 # ============================================
 # Function: Train Logistic Regression model
 # ============================================
-def train_logistic(df, features, viability_col='viability_pct'):
-    df['label'] = (df[viability_col] < 70).astype(int)
+def train_logistic(df, features, viability_threshold, viability_col='viability_pct'):
+    """
+    Trains a logistic regression model to classify batches as fail/pass based on viability threshold.
+    
+    Args:
+        df (pd.DataFrame): Merged batch dataset.
+        features (list): Feature column names for training.
+        viability_threshold (float): Threshold to define fail/pass.
+        viability_col (str): Column name for viability %.
+
+    Returns:
+        model, scaler, df, auc, accuracy
+    """
+    df['label'] = (df[viability_col] < viability_threshold).astype(int)
     X = df[features]
     y = df['label']
+
     scaler = StandardScaler()  # Scales features to mean=0, std=1 (important for models like GMM and Logistic Regression)
     X_scaled = scaler.fit_transform(X)
 
     model = LogisticRegression()  # Can adjust with class_weight='balanced' if your dataset is imbalanced
     model.fit(X_scaled, y)
+
     y_prob = model.predict_proba(X_scaled)[:, 1]
     df['logreg_p_failure'] = y_prob
 
@@ -92,31 +106,45 @@ def train_logistic(df, features, viability_col='viability_pct'):
     return model, scaler, df, auc, acc
 
 # ============================================
-# Function: Plot model comparison and boundaries
+# Function: Plot model comparison and viability map
 # ============================================
 def plot_models(df, features, output_dir):
-    x, y = features
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    import os
+    import matplotlib.pyplot as plt
 
-    # GMM
-    scatter1 = axes[0].scatter(df[x], df[y], c=df['gmm_p_failure'], cmap='Reds', edgecolor='k')
-    axes[0].set_title('GMM Risk (Unsupervised)')
+    x, y = features
+    cmap = 'coolwarm'  # Blue (low) to Red (high) for visual contrast
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharex=True, sharey=True)
+
+    # --- Viability Percentage Plot ---
+    sc0 = axes[0].scatter(df[x], df[y], c=df['viability_pct'], cmap=cmap, edgecolor='k')
+    axes[0].set_title('Viability %')
     axes[0].set_xlabel(x)
     axes[0].set_ylabel(y)
-    fig.colorbar(scatter1, ax=axes[0])
+    cbar0 = plt.colorbar(sc0, ax=axes[0])
+    cbar0.set_label('Viability (%)')
 
-    # Logistic Regression
-    scatter2 = axes[1].scatter(df[x], df[y], c=df['logreg_p_failure'], cmap='Reds', edgecolor='k')
-    axes[1].set_title('Logistic Risk (Supervised)')
+    # --- GMM Predicted Failure Probability ---
+    sc1 = axes[1].scatter(df[x], df[y], c=df['gmm_p_failure'], cmap=cmap, vmin=0, vmax=1, edgecolor='k')
+    axes[1].set_title('GMM Risk (Unsupervised)')
     axes[1].set_xlabel(x)
-    axes[1].set_ylabel(y)
-    fig.colorbar(scatter2, ax=axes[1])
+    cbar1 = plt.colorbar(sc1, ax=axes[1])
+    cbar1.set_label('GMM P(failure)')
 
+    # --- Logistic Regression Failure Probability ---
+    sc2 = axes[2].scatter(df[x], df[y], c=df['logreg_p_failure'], cmap=cmap, vmin=0, vmax=1, edgecolor='k')
+    axes[2].set_title('Logistic Risk (Supervised)')
+    axes[2].set_xlabel(x)
+    cbar2 = plt.colorbar(sc2, ax=axes[2])
+    cbar2.set_label('Logistic P(failure)')
+
+    # Save and clean up
     plt.tight_layout()
     out_path = os.path.join(output_dir, 'model_comparison.png')
     plt.savefig(out_path, dpi=300)
     plt.close()
-    print("Model comparison plot saved.")
+    print(f"Model comparison plot saved to: {out_path}")
 
 # ============================================
 # Function: Save model artifacts and metadata
@@ -143,8 +171,8 @@ def save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, o
 # ============================================
 def main():
 
-     # Update with your actual folder path. Use raw string if using Windows (e.g., r'C:\path\to\files')
-    base_dir = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies'
+     # ===== USER: Update with your actual folder path. Use raw string if using Windows (e.g., r'C:\path\to\files')
+    base_dir = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\batch_summary_tool'
     hist_dir = os.path.join(base_dir, 'historical_data')
     out_dir = os.path.join(base_dir, 'output')
 
@@ -157,11 +185,16 @@ def main():
         print("No data to process.")
         return
 
+    # ===== USER: Update this value based on your process criteria.
+    # Batches with viability > threshold will be labeled as 'pass' (1), others as 'fail' (0).
+    # Threshold feeds into Logisitic Regression model training, if threshold does not partition data into two classes, model will not train and return an error.
+    viability_threshold = 90  # <-- EDIT HERE as needed
+
     # ===== USER: Modify these if using different features
     features = ['component_A', 'avg_pH']
 
     gmm, gmm_scaler, merged = train_gmm(merged, features)
-    logreg, logreg_scaler, merged, auc, acc = train_logistic(merged, features)
+    logreg, logreg_scaler, merged, auc, acc = train_logistic(merged, features, viability_threshold)
 
     plot_models(merged, features, out_dir)
     save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, out_dir)
