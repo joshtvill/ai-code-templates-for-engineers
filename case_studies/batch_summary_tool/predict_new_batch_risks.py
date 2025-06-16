@@ -155,8 +155,7 @@ def main():
     Edit base_dir to match your file structure.
     '''
     # ===== USER: Update base folder for your setup
-    base_dir = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\batch_summary_tool'
-
+    base_dir = r'C:\path\to\your\batch_summary_tool'
     test_dir = os.path.join(base_dir, 'test_data')
     output_dir = os.path.join(base_dir, 'output')
 
