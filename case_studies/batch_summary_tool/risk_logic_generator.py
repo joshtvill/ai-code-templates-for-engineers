@@ -56,7 +56,7 @@ def merge_data(batch_df, qc_df, coa_df):
 # ============================================
 # Function: Train GMM and return failure probabilities
 # ============================================
-def train_gmm(df, features, viability_col='viability_pct'):
+def train_gmm(df, features, viability_threshold, viability_col='viability_pct'):
     X = df[features].copy()
     scaler = StandardScaler()  # Scales features to mean=0, std=1 (important for models like GMM and Logistic Regression)
     X_scaled = scaler.fit_transform(X)
@@ -66,7 +66,7 @@ def train_gmm(df, features, viability_col='viability_pct'):
     df['gmm_cluster'] = cluster_ids
 
     # Estimate cluster-wise failure probability
-    df['gmm_p_failure'] = df.groupby('gmm_cluster')[viability_col].transform(lambda x: (x < 70).mean())
+    df['gmm_p_failure'] = df.groupby('gmm_cluster')[viability_col].transform(lambda x: (x < viability_threshold).mean())
 
     return gmm, scaler, df
 
