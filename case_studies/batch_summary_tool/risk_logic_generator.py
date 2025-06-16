@@ -183,11 +183,13 @@ def plot_models(df, features, output_dir, logreg_model=None):
 # ============================================
 # Function: Save model artifacts and metadata
 # ============================================
-def save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, output_dir):
+def save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, output_dir, cluster_map):
     try:
+        # Save models with scalers
         joblib.dump({'model': gmm, 'scaler': gmm_scaler}, os.path.join(output_dir, 'risk_model_gmm.pkl'))
         joblib.dump({'model': logreg, 'scaler': logreg_scaler}, os.path.join(output_dir, 'risk_model_logreg.pkl'))
 
+        # Save model metadata
         metadata = {
             'features_used': features,
             'logreg_auc': auc,
@@ -195,9 +197,17 @@ def save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, o
         }
         with open(os.path.join(output_dir, 'risk_model_metadata.json'), 'w') as f:
             json.dump(metadata, f, indent=2)
-        print("Models and metadata saved.")
+
+        # Save cluster-to-failure-probability mapping
+        cluster_map_path = os.path.join(output_dir, 'gmm_cluster_map.json')
+        with open(cluster_map_path, 'w') as f:
+            json.dump(cluster_map, f, indent=2)
+
+        print("Models, metadata, and cluster map saved.")
+
     except Exception as e:
         print(f"Save error: {e}")
+
 
 # ============================================
 # Main Runner
@@ -236,13 +246,6 @@ def main():
     # Plot comparison and save outputs
     plot_models(merged, features, out_dir, logreg_model={'model': logreg, 'scaler': logreg_scaler})
     save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, out_dir, cluster_map)
-
-    # Save GMM cluster risk map as a separate JSON file
-    import json
-    cluster_map_path = os.path.join(out_dir, 'gmm_cluster_map.json')
-    with open(cluster_map_path, 'w') as f:
-        json.dump(cluster_map, f, indent=2)
-    print(f"GMM cluster risk map saved to: {cluster_map_path}")
 
     print("Risk logic generation complete.")
 
