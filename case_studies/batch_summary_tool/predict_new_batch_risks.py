@@ -145,14 +145,14 @@ def main():
     Edit base_dir to match your file structure.
     '''
     # ===== USER: Update base folder for your setup
-    base_dir = r'/your/path/to/batch_summary_tool'
+    base_dir = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\batch_summary_tool'
 
     test_dir = os.path.join(base_dir, 'test_data')
     output_dir = os.path.join(base_dir, 'output')
 
     # Load new batch and COA
-    batch_path = os.path.join(test_dir, 'new_batch_log.csv')
-    coa_path = os.path.join(test_dir, 'new_coa.csv')
+    batch_path = os.path.join(test_dir, 'Test_Batch_Log.csv')
+    coa_path = os.path.join(test_dir, 'Test_COA_Data.csv')
 
     batch_df = load_csv_file(batch_path, 'Test Batch Log')
     coa_df = load_csv_file(coa_path, 'Test COA')
