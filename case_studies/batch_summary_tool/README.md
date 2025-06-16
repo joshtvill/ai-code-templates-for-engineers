@@ -87,6 +87,12 @@ This mirrors how an engineer might construct and validate a triage tool for earl
 
 ---
 
+## Risk Trend Over Time (GMM)
+
+![GMM Risk Trend](output/risk_trend_gmm.png)
+
+---
+
 ## Risk Trend Over Time (LogReg)
 
 ![LogReg Risk Trend](output/risk_trend_logreg.png)
