@@ -53,7 +53,7 @@ def merge_new_data(batch_df, coa_df):
 # ============================================
 # Function: Apply risk models to new data
 # ============================================
-def apply_models(df, model_dict, features, method_label, cluster_map=None):
+def apply_models(df, model_dict, features, method_label, flag_threshold=0.5, cluster_map=None):
     '''
     Predict P(failure) using a trained model and scaler.
 
@@ -87,7 +87,7 @@ def apply_models(df, model_dict, features, method_label, cluster_map=None):
             df['logreg_p_failure'] = p_failure
 
         # Apply generic threshold logic
-        df[f'{method_label}_risk_flag'] = df[f'{method_label}_p_failure'] > 0.75
+        df[f'{method_label}_risk_flag'] = df[f'{method_label}_p_failure'] > flag_threshold
 
     except Exception as e:
         print(f"Error in {method_label} prediction: {e}")
@@ -113,12 +113,9 @@ def append_to_log(df, log_path, features_to_log):
     except Exception as e:
         print(f"Write error: {e}")
 
-# ============================================
-# Function: Plot time series of risk scores
-# ============================================
-def plot_risk_trend(df, score_col, flag_col, output_path):
+def plot_risk_trend(df, score_col, flag_col, output_path, threshold_line=None):
     '''
-    Plot time-series of risk scores with color-coded flags.
+    Plot time-series of risk scores with color-coded flags and optional threshold line.
     '''
     try:
         df['date'] = pd.to_datetime(df['date'])
@@ -127,11 +124,20 @@ def plot_risk_trend(df, score_col, flag_col, output_path):
         colors = df[flag_col].map({True: 'red', False: 'blue'})
         plt.figure(figsize=(10, 6))
         plt.scatter(df['date'], df[score_col], c=colors)
+
         plt.xlabel('Date')
         plt.ylabel('Risk Score')
         plt.title(f'Risk Score Over Time – {score_col}')
         plt.grid(True, linestyle='--', alpha=0.3)
         plt.xticks(rotation=90)
+
+        # Plot threshold line
+        if threshold_line is not None:
+            plt.axhline(y=threshold_line, color='black', linestyle=':', linewidth=1)
+            plt.text(df['date'].min(), threshold_line + 0.01,
+                     f'Threshold = {threshold_line:.2f}',
+                     fontsize=8, color='black', va='bottom')
+
         plt.tight_layout()
         plt.savefig(output_path, dpi=300)
         plt.close()
@@ -153,6 +159,9 @@ def main():
 
     test_dir = os.path.join(base_dir, 'test_data')
     output_dir = os.path.join(base_dir, 'output')
+
+    # ===== USER: Update flag threshold for risk scoring
+    flag_thresh = 0.5  # Threshold for risk flagging
 
     # Load new batch and COA
     batch_path = os.path.join(test_dir, 'Test_Batch_Log.csv')
@@ -184,11 +193,13 @@ def main():
 
     import json
     with open(cluster_map_path, 'r') as f:
-        gmm_cluster_map = json.load(f)
+        raw_map = json.load(f)
+        gmm_cluster_map = {int(k): v for k, v in raw_map.items()}
+
 
     # Predict risk using both models
-    df = apply_models(df, gmm_model, features, 'gmm', cluster_map=gmm_cluster_map)
-    df = apply_models(df, logreg_model, features, 'logreg')
+    df = apply_models(df, gmm_model, features, 'gmm', flag_threshold=flag_thresh, cluster_map=gmm_cluster_map)
+    df = apply_models(df, logreg_model, features,'logreg', flag_threshold=flag_thresh)
 
     # Append to log
     history_log = os.path.join(output_dir, 'batch_history_log.csv')
@@ -199,9 +210,9 @@ def main():
 
     # Save plots
     plot_risk_trend(df, 'gmm_p_failure', 'gmm_risk_flag',
-                    os.path.join(output_dir, 'risk_trend_gmm.png'))
+                    os.path.join(output_dir, 'risk_trend_gmm.png'), threshold_line=flag_thresh)
     plot_risk_trend(df, 'logreg_p_failure', 'logreg_risk_flag',
-                    os.path.join(output_dir, 'risk_trend_logreg.png'))
+                    os.path.join(output_dir, 'risk_trend_logreg.png'), threshold_line=flag_thresh)
 
     print("Risk scoring complete.")
 
