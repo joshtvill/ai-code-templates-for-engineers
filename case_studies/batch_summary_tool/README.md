@@ -83,7 +83,7 @@ This mirrors how an engineer might construct and validate a triage tool for earl
 
 ## Model Comparison: Parameter Space
 
-![Model Comparison](output/model_comparison_plot.png)
+![Model Comparison](output/model_comparison.png)
 
 ---
 
