@@ -68,7 +68,10 @@ def train_gmm(df, features, viability_threshold, viability_col='viability_pct'):
     # Estimate cluster-wise failure probability
     df['gmm_p_failure'] = df.groupby('gmm_cluster')[viability_col].transform(lambda x: (x < viability_threshold).mean())
 
-    return gmm, scaler, df
+    # Save cluster → failure probability mapping
+    cluster_map = df.groupby('gmm_cluster')[viability_col].apply(lambda x: (x < viability_threshold).mean()).to_dict()
+
+    return gmm, scaler, df, cluster_map
 
 # ============================================
 # Function: Train Logistic Regression model
@@ -202,7 +205,7 @@ def save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, o
 # ============================================
 def main():
 
-     # ===== USER: Update with your actual folder path. Use raw string if using Windows (e.g., r'C:\path\to\files')
+    # ===== USER: Update with your actual folder path. Use raw string if using Windows (e.g., r'C:\path\to\files')
     base_dir = r'C:\Users\villa\OneDrive\Documents\GitHub\ai-code-templates-for-engineers\case_studies\batch_summary_tool'
     hist_dir = os.path.join(base_dir, 'historical_data')
     out_dir = os.path.join(base_dir, 'output')
@@ -215,20 +218,32 @@ def main():
     if merged.empty:
         print("No data to process.")
         return
-    
+
     # ===== USER: Update this value based on your process criteria.
     # Batches with viability > threshold will be labeled as 'pass' (1), others as 'fail' (0).
-    # Threshold feeds into Logisitic Regression model training, if threshold does not partition data into two classes, model will not train and return an error.
+    # Threshold feeds into Logistic Regression model training.
     viability_threshold = 0.90  # <-- EDIT HERE as needed (e.g., 0.90 for 90% viability)
 
     # ===== USER: Modify these if using different features
     features = ['component_A', 'avg_pH']
 
-    gmm, gmm_scaler, merged = train_gmm(merged, features, viability_threshold)
+    # Train GMM model and extract cluster risk mapping
+    gmm, gmm_scaler, merged, cluster_map = train_gmm(merged, features, viability_threshold)
+
+    # Train logistic regression
     logreg, logreg_scaler, merged, auc, acc = train_logistic(merged, features, viability_threshold)
 
-    plot_models(merged, features, out_dir)
-    save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, out_dir)
+    # Plot comparison and save outputs
+    plot_models(merged, features, out_dir, logreg_model={'model': logreg, 'scaler': logreg_scaler})
+    save_artifacts(gmm, gmm_scaler, logreg, logreg_scaler, features, auc, acc, out_dir, cluster_map)
+
+    # Save GMM cluster risk map as a separate JSON file
+    import json
+    cluster_map_path = os.path.join(out_dir, 'gmm_cluster_map.json')
+    with open(cluster_map_path, 'w') as f:
+        json.dump(cluster_map, f, indent=2)
+    print(f"GMM cluster risk map saved to: {cluster_map_path}")
+
     print("Risk logic generation complete.")
 
 if __name__ == '__main__':

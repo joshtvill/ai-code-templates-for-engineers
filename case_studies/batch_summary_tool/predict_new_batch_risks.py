@@ -53,7 +53,7 @@ def merge_new_data(batch_df, coa_df):
 # ============================================
 # Function: Apply risk models to new data
 # ============================================
-def apply_models(df, model_dict, features, method_label):
+def apply_models(df, model_dict, features, method_label, cluster_map=None):
     '''
     Predict P(failure) using a trained model and scaler.
 
@@ -62,6 +62,7 @@ def apply_models(df, model_dict, features, method_label):
         model_dict (dict): Contains 'model' and 'scaler'
         features (list): Input features for prediction
         method_label (str): Prefix to store results (e.g., 'gmm', 'logreg')
+        cluster_map (dict): Optional – mapping of GMM cluster IDs to failure probabilities
 
     Adds:
         df[f'{method_label}_p_failure']
@@ -76,16 +77,18 @@ def apply_models(df, model_dict, features, method_label):
             cluster_id = model.predict(X_scaled)
             df['gmm_cluster'] = cluster_id
 
-            # Manually define risk probabilities per cluster based on training data
-            # (Adjust these if your cluster IDs map differently)
-            cluster_risk_map = {0: 0.2, 1: 0.85}  # Example: cluster 1 has higher failure risk
-            df['gmm_p_failure'] = df['gmm_cluster'].map(cluster_risk_map)
-        else:
+            if cluster_map is not None:
+                df['gmm_p_failure'] = df['gmm_cluster'].map(cluster_map)
+            else:
+                raise ValueError("Missing cluster_map input for GMM model.")
+
+        else:  # Logistic regression
             p_failure = model.predict_proba(X_scaled)[:, 1]
             df['logreg_p_failure'] = p_failure
 
         # Apply generic threshold logic
         df[f'{method_label}_risk_flag'] = df[f'{method_label}_p_failure'] > 0.75
+
     except Exception as e:
         print(f"Error in {method_label} prediction: {e}")
 
@@ -169,21 +172,22 @@ def main():
     # ===== Check that model files exist before loading
     gmm_path = os.path.join(output_dir, 'risk_model_gmm.pkl')
     logreg_path = os.path.join(output_dir, 'risk_model_logreg.pkl')
+    cluster_map_path = os.path.join(output_dir, 'gmm_cluster_map.json')
 
-    if not os.path.exists(gmm_path):
-        print(f"Missing GMM model: {gmm_path}")
-    if not os.path.exists(logreg_path):
-        print(f"Missing Logistic Regression model: {logreg_path}")
-    if not os.path.exists(gmm_path) or not os.path.exists(logreg_path):
-        print("Aborting. Please generate models with risk_logic_generator.py.")
+    if not all(os.path.exists(p) for p in [gmm_path, logreg_path, cluster_map_path]):
+        print("Missing one or more required model files.")
         return
 
-    # Load models if files are present
+    # Load models and GMM cluster risk mapping
     gmm_model = joblib.load(gmm_path)
     logreg_model = joblib.load(logreg_path)
 
+    import json
+    with open(cluster_map_path, 'r') as f:
+        gmm_cluster_map = json.load(f)
+
     # Predict risk using both models
-    df = apply_models(df, gmm_model, features, 'gmm')
+    df = apply_models(df, gmm_model, features, 'gmm', cluster_map=gmm_cluster_map)
     df = apply_models(df, logreg_model, features, 'logreg')
 
     # Append to log
