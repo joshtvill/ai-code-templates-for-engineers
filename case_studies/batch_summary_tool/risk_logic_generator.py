@@ -108,17 +108,19 @@ def train_logistic(df, features, viability_threshold, viability_col='viability_p
 # ============================================
 # Function: Plot model comparison and viability map
 # ============================================
-def plot_models(df, features, output_dir):
+def plot_models(df, features, output_dir, logreg_model=None):
     import os
+    import numpy as np
     import matplotlib.pyplot as plt
 
     x, y = features
-    cmap = 'coolwarm'  # Blue (low) to Red (high) for visual contrast
+    cmap_viab = 'viridis'
+    cmap_risk = 'RdBu_r'
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharex=True, sharey=True)
 
     # --- Viability Percentage Plot ---
-    sc0 = axes[0].scatter(df[x], df[y], c=df['viability_pct'], cmap=cmap, edgecolor='k')
+    sc0 = axes[0].scatter(df[x], df[y], c=df['viability_pct'], cmap=cmap_viab, edgecolor='k')
     axes[0].set_title('Viability %')
     axes[0].set_xlabel(x)
     axes[0].set_ylabel(y)
@@ -126,18 +128,47 @@ def plot_models(df, features, output_dir):
     cbar0.set_label('Viability (%)')
 
     # --- GMM Predicted Failure Probability ---
-    sc1 = axes[1].scatter(df[x], df[y], c=df['gmm_p_failure'], cmap=cmap, vmin=0, vmax=1, edgecolor='k')
+    sc1 = axes[1].scatter(df[x], df[y], c=df['gmm_p_failure'], cmap=cmap_risk, vmin=0, vmax=1, edgecolor='k')
     axes[1].set_title('GMM Risk (Unsupervised)')
     axes[1].set_xlabel(x)
     cbar1 = plt.colorbar(sc1, ax=axes[1])
     cbar1.set_label('GMM P(failure)')
 
+    # Annotate GMM clusters
+    for cluster_id in sorted(df['gmm_cluster'].unique()):
+        cluster_data = df[df['gmm_cluster'] == cluster_id]
+        center_x = cluster_data[x].mean()
+        center_y = cluster_data[y].mean()
+        p_fail = cluster_data['gmm_p_failure'].iloc[0]
+        axes[1].text(center_x, center_y, f'Cluster {cluster_id}\nP={p_fail:.2f}',
+                     fontsize=9, ha='center', va='center',
+                     bbox=dict(facecolor='white', edgecolor='gray', alpha=0.75))
+
     # --- Logistic Regression Failure Probability ---
-    sc2 = axes[2].scatter(df[x], df[y], c=df['logreg_p_failure'], cmap=cmap, vmin=0, vmax=1, edgecolor='k')
+    sc2 = axes[2].scatter(df[x], df[y], c=df['logreg_p_failure'], cmap=cmap_risk, vmin=0, vmax=1, edgecolor='k')
     axes[2].set_title('Logistic Risk (Supervised)')
     axes[2].set_xlabel(x)
     cbar2 = plt.colorbar(sc2, ax=axes[2])
     cbar2.set_label('Logistic P(failure)')
+
+    # --- Add Decision Boundary if model is provided ---
+    if logreg_model is not None:
+        model = logreg_model['model']
+        scaler = logreg_model['scaler']
+
+        # Create a meshgrid across the feature space
+        x_min, x_max = df[x].min() - 0.05, df[x].max() + 0.05
+        y_min, y_max = df[y].min() - 0.05, df[y].max() + 0.05
+        xx, yy = np.meshgrid(np.linspace(x_min, x_max, 300),
+                             np.linspace(y_min, y_max, 300))
+        grid = np.c_[xx.ravel(), yy.ravel()]
+        grid_scaled = scaler.transform(grid)
+        probs = model.predict_proba(grid_scaled)[:, 1].reshape(xx.shape)
+
+        # Draw the 0.5 decision boundary
+        contour = axes[2].contour(xx, yy, probs, levels=[0.5], colors='black', linewidths=1.5)
+        contour.collections[0].set_label('Decision Boundary (P=0.5)')
+        axes[2].legend(loc='upper right')
 
     # Save and clean up
     plt.tight_layout()
@@ -193,7 +224,7 @@ def main():
     # ===== USER: Modify these if using different features
     features = ['component_A', 'avg_pH']
 
-    gmm, gmm_scaler, merged = train_gmm(merged, features)
+    gmm, gmm_scaler, merged = train_gmm(merged, features, viability_threshold)
     logreg, logreg_scaler, merged, auc, acc = train_logistic(merged, features, viability_threshold)
 
     plot_models(merged, features, out_dir)
