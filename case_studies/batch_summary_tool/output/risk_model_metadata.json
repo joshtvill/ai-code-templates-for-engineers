@@ -3,6 +3,6 @@
     "component_A",
     "avg_pH"
   ],
-  "logreg_auc": 1.0,
-  "logreg_accuracy": 0.9
+  "logreg_auc": 0.7893999632139674,
+  "logreg_accuracy": 0.7983333333333333
 }

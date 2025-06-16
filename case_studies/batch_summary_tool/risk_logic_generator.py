@@ -184,11 +184,11 @@ def main():
     if merged.empty:
         print("No data to process.")
         return
-
+    
     # ===== USER: Update this value based on your process criteria.
     # Batches with viability > threshold will be labeled as 'pass' (1), others as 'fail' (0).
     # Threshold feeds into Logisitic Regression model training, if threshold does not partition data into two classes, model will not train and return an error.
-    viability_threshold = 90  # <-- EDIT HERE as needed
+    viability_threshold = 0.90  # <-- EDIT HERE as needed (e.g., 0.90 for 90% viability)
 
     # ===== USER: Modify these if using different features
     features = ['component_A', 'avg_pH']
