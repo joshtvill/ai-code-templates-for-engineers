@@ -1,4 +1,6 @@
 pandas
+numpy
 matplotlib
 jupyter
-numpy
+scikit-learn
+joblib
