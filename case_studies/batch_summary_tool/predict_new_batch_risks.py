@@ -161,7 +161,7 @@ def main():
     output_dir = os.path.join(base_dir, 'output')
 
     # ===== USER: Update flag threshold for risk scoring
-    flag_thresh = 0.5  # Threshold for risk flagging
+    flag_thresh = 0.6  # Threshold for risk flagging
 
     # Load new batch and COA
     batch_path = os.path.join(test_dir, 'Test_Batch_Log.csv')
