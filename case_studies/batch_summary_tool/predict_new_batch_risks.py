@@ -76,9 +76,10 @@ def apply_models(df, model_dict, features, method_label):
             cluster_id = model.predict(X_scaled)
             df['gmm_cluster'] = cluster_id
 
-            # Assume cluster ID mapping was saved as risk estimate
-            risk_probs = df.groupby('gmm_cluster').transform('mean')[features[0]]
-            df['gmm_p_failure'] = risk_probs
+            # Manually define risk probabilities per cluster based on training data
+            # (Adjust these if your cluster IDs map differently)
+            cluster_risk_map = {0: 0.2, 1: 0.85}  # Example: cluster 1 has higher failure risk
+            df['gmm_p_failure'] = df['gmm_cluster'].map(cluster_risk_map)
         else:
             p_failure = model.predict_proba(X_scaled)[:, 1]
             df['logreg_p_failure'] = p_failure
