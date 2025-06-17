@@ -1,52 +1,96 @@
-# AI-Generated Code Templates for Engineers
+# Manufacturing Data Toolkit
 
-This repository contains a growing set of Python code templates and Jupyter notebooks designed to accelerate engineering workflows using automation and data-driven decision-making.
+This repository showcases reusable, lightweight Python tooling that a senior or staff-level engineer might prototype to support internal process development, MSAT workflows, manufacturing data analysis, or systems integration.
 
-Whether you're loading process data, filtering noisy signals, plotting trends, or automating basic analyses, these tools help you go from ad hoc testing to reusable logic quickly.
+All code is structured for clarity, maintainability, and adaptation by teams, with consistent naming, modular logic, and documented interfaces.
 
-The purpose of this repository is three-fold:
- - To help the author expand his understanding of Python, VS Code, and Github, building upon a foundation of MATLAB used in an academic research setting
- - To underatand how to effectively leverage natural language AI models to generate and optimize basic coding blocks (and learn how to teach other engineers how to leverge AI in the same way)
- - To generate a simple coding reference to enhance the analytical toolbox available to engineers and technical specialists who might not have a traditional coding background.
- 
-Code templates were generated using ChatGPT. Testing and Validation was done by Josh Villanueva.
+---
 
-## What's Inside
+## Why This Repo Exists
 
-- `templates/`: Reusable Python functions for data loading, filtering, calculations, and plotting
-- `notebooks/`: Jupyter notebooks demonstrating how to apply the templates in real engineering scenarios
-- `examples/`: Standalone scripts that show complete workflows for data analysis or process modeling
+In many production environments, engineers encounter recurring bottlenecks: QC results are delayed, model logic is scattered across scripts, or there is no shared framework for quick triage or prototyping.
 
-## Getting Started
+This repo demonstrates how one engineer might address those gaps by:
+- Building simple, understandable tools for batch scoring, SPC, and defect mapping
+- Standardizing analysis blocks to improve reuse and reduce onboarding time
+- Aligning tool logic to real workflows in early-phase manufacturing and tech transfer
 
-**1. Clone the repo or download the ZIP**
+The goal is not to replace enterprise systems, but to show how fast, testable code can increase visibility, support decisions, and accelerate engineering feedback cycles.
 
-```bash
-git clone https://github.com/joshtvill/ai-code-templates-for-engineers.git
-cd ai-code-templates-for-engineers
+---
+
+## How This Might Be Used on a Real Team
+
+If embedded in a cross-functional team, these tools could be adapted to:
+- Score incoming batches before QC is finalized
+- Visualize inline parameter drift or SPC excursions
+- Map defects spatially for faster root cause narrowing
+- Create modular functions that feed into internal dashboards or notebooks
+
+Everything here is built to plug into a real process environment, not just run in isolation.
+
+---
+
+## Repository Structure
+
+| Folder               | Description |
+|----------------------|-------------|
+| `case_studies/`      | Three complete tools simulating batch scoring, defect triage, and SPC analysis |
+| `templates/`         | Reusable Python modules grouped by function: I/O, transform, model, plot, test |
+
+---
+
+## Case Studies
+
+| Case Study               | Summary |
+|--------------------------|---------|
+| `batch_summary_tool/`    | Uses GMM and logistic regression to estimate risk of QC failure from process inputs |
+| `spatial_defect_map_tool/` | Visualizes defect (x, y) clustering by type for debug and triage |
+| `spc_summary_tool/`      | Calculates control limits, flags outliers, and plots SPC trend lines for a single process metric |
+
+Each case study is fully self-contained with:
+- Input and output example files
+- Visual output (plots)
+- Docstring-driven code with inline commentary
+- A README describing use case, expected behavior, and setup
+
+---
+
+## About the Template Library
+
+Templates in `/templates/` are modular, testable blocks extracted from real case logic:
+- `io/`: Load, save, append
+- `transform/`: Detect outliers, merge batch and QC data, calculate SPC stats
+- `models/`: Train and apply GMM or logistic regression
+- `plot/`: Render SPC charts, risk scores over time, spatial maps
+- `test/`: Generate synthetic batch and defect data
+
+These templates follow consistent conventions:
+- Docstring headers and parameter explanations
+- `snake_case` naming for files and functions
+- Optional `__main__` blocks for standalone testing
+
+---
+
+## Example Usage Pattern
+
+```python
+from io.load_csv_file import load_csv_file
+from transform.compute_spc_metrics import compute_spc_metrics
+from plot.plot_control_chart import plot_control_chart
+
+df = load_csv_file('example_data.csv')
+stats = compute_spc_metrics(df['thickness'])
+plot_control_chart(df['thickness'], stats, output_path='spc_chart.png')
 ```
 
-**2. Install required packages**
+Other workflows include:
+- Training models on historical batch data
+- Estimating batch risk using model predictions
+- Visualizing outliers or trends across time
 
-```bash
-pip install -r requirements.txt
-```
+---
 
-**3. Open in VS Code or Jupyter**
+## Development Note
 
-You can open `.py` files in any editor, or run `.ipynb` notebooks directly inside VS Code.
-
-## Example Use Cases
-
-- Load and clean process data from CSV logs
-- Visualize trends across batches or runs
-- Apply basic filtering and thresholds
-- Create modular tools for reuse across notebooks or scripts
-
-## About the Author
-
-This repo is maintained by Josh Villanueva ([GitHub profile](https://github.com/joshtvill)), a process engineer applying AI and Python to make engineering workflows more scalable, automated, and insightful.
-
-## License
-
-This project is licensed under the MIT License.
+This repository was created using a hybrid workflow combining engineering domain knowledge with AI-assisted development to accelerate prototype generation. Every function and output was designed for real-world applicability and team handoff readiness.
